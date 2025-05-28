@@ -1,2 +1,3 @@
 bin*/
-make.exe
+make*
+!make*.odin
