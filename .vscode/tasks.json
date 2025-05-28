@@ -1,0 +1,29 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "Build Debug",
+			"group": "build",
+			"command": "odin build src/ -out:bin_deb/app.exe -debug",
+			"problemMatcher": ["$odin"],
+		},
+		{
+			"type": "shell",
+			"label": "Run Debug",
+			"command": "./bin_deb/app.exe",
+		},
+		{
+			"label": "Build & Run Debug",
+			"group": {
+				"kind": "build",
+				"isDefault": true,
+			},
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"Build Debug",
+				"Run Debug",
+			],
+		},
+	]
+}
