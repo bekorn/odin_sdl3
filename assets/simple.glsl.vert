@@ -1,5 +1,9 @@
 #version 460
 
+layout(set=1, binding=0) uniform UBO {
+    mat4 matMVP;
+};
+
 const vec2 positions[3] = vec2[](
     vec2(-0.5, -0.5),
     vec2(+0.5, -0.5),
@@ -8,5 +12,5 @@ const vec2 positions[3] = vec2[](
 
 void main()
 {
-    gl_Position = vec4(positions[gl_VertexIndex], 0, 1);
+    gl_Position = matMVP * vec4(positions[gl_VertexIndex], 0, 1);
 }

@@ -1,6 +1,7 @@
 package main
 
 import "core:log"
+import "core:math/linalg/glsl"
 import sdl "vendor:sdl3"
 
 vert_shader_code := #load("../bin_assets/simple.spv.vert")
@@ -39,6 +40,7 @@ main :: proc () {
         format = {.SPIRV},
         entrypoint = "main",
         stage = .VERTEX,
+        num_uniform_buffers = 1,
     })
     frag_shader := sdl.CreateGPUShader(device, sdl.GPUShaderCreateInfo{
         code = raw_data(frag_shader_code),
@@ -61,8 +63,45 @@ main :: proc () {
     sdl.ReleaseGPUShader(device, vert_shader)
     sdl.ReleaseGPUShader(device, frag_shader)
 
+
+
+    window_size : glsl.ivec2
+    assert(sdl.GetWindowSizeInPixels(window, &window_size.x, &window_size.y))
+    window_aspect := f32(window_size.x) / f32(window_size.y)
+
+    proj := glsl.mat4Perspective(glsl.radians_f32(70), window_aspect, 0.001, 1000)
+
+    UBO :: struct {
+        matMVP : glsl.mat4,
+    }
+
+    rotation := f32(0)
+    ubo := UBO{}
+
+
+
+    FrameState :: struct {
+        idx : u64,
+        ticks : u64,
+        delta_time : f32,
+    }
+
+    frame_state := FrameState{
+        idx = 0,
+        ticks = sdl.GetTicks(),
+        delta_time = 0,
+    }
+
     is_running := true
     for is_running {
+
+        {
+            current_ticks := sdl.GetTicks()
+            frame_state.idx += 1
+            frame_state.delta_time = f32(current_ticks - frame_state.ticks) * 0.001
+            frame_state.ticks = current_ticks
+        }
+
 
         // Handle events
         for e: sdl.Event; sdl.PollEvent(&e); {
@@ -74,8 +113,12 @@ main :: proc () {
             }
         }
 
+
         // Update
-        
+        rotation += (0.25 * glsl.TAU) * frame_state.delta_time
+        model := glsl.mat4Translate({0, 0.1, -1}) * glsl.mat4Rotate({0, 1, 0}, rotation)
+        ubo.matMVP = proj * model
+
 
         // Draw
         cmd := sdl.AcquireGPUCommandBuffer(device)
@@ -100,9 +143,8 @@ main :: proc () {
         {
             sdl.BindGPUGraphicsPipeline(render_pass, pipeline)
 
+            sdl.PushGPUVertexUniformData(cmd, 0, &ubo, size_of(ubo))
             sdl.DrawGPUPrimitives(render_pass, 3, 1, 0, 0)
-
-
         }
         sdl.EndGPURenderPass(render_pass)
 
